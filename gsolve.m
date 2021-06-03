@@ -1,5 +1,5 @@
 %
-% gsolve.m ? Solve for imaging system response function
+% gsolve.m Solve for imaging system response function
 %
 % Given a set of pixel values observed for several pixels in several
 % images with different exposure times, this function returns the
@@ -25,8 +25,8 @@
 %
 function [g,lE]=gsolve(Z,B,l,w)
 n = 256;
-%A = zeros(size(Z,1)*size(Z,2)+n+1,n+size(Z,1));
-%b = zeros(size(A,1),1);
+A = zeros(size(Z,1)*size(Z,2)+n+1,n+size(Z,1));
+b = zeros(size(A,1),1);
 %% Include the datafitting equations
 k = 1;
 for i=1:size(Z,1)
@@ -34,7 +34,7 @@ for i=1:size(Z,1)
         wij = w(Z(i,j)+1);
         A(k,Z(i,j)+1) = wij; 
         A(k,n+i) = -wij; 
-        b(k,1) = wij * B(j); %b(k,1) = wij * B(i,j);
+        b(k,1) = wij * B(i,j);
         k=k+1;
     end
 end
@@ -52,3 +52,4 @@ end
 x = A\b;
 g = x(1:n);
 lE = x(n+1:size(x,1));
+end
