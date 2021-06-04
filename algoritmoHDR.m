@@ -85,7 +85,7 @@ for i = 1:numImagenes
 end
 
 %2. Factor de suavizado
-lambda = 50;
+lambda = 25; %25
 
 %3. Funcion de pesos para cada valor de pixel
 pesos = zeros(1, 256);
@@ -122,15 +122,25 @@ fprintf('Calculamos el mapa de radiancia.\n')
 
 miMapa = mapaRadiancia(cellArrayRecortes, g_R, g_G, g_B, B, pesos);
 figure;
-subplot(1, 2, 1); imshow(miMapa);
+subplot(1, 3, 1); imshow(miMapa);
     title('Mapa de radiancia HDR');
     
 %% P7. Tone mapping
 fprintf('Ajustamos el color.\n')
 
 %Especificamos brillo y saturación final
-brillo = 0.72; saturacion = 0.6;
-resultadoFinal = operadorReinhard(miMapa, brillo, saturacion);
-subplot(1, 2, 2); imshow(resultadoFinal);
+%para bóveda: brillo = 1; saturación = 0.5;
+brillo = 1; saturacion = 0.5;
+resultadoFinal = operadorTumblin(miMapa, brillo, saturacion);
+subplot(1, 3, 2); imshow(resultadoFinal);
+    title('Imagen con operador de Tumblin');
+truesize
+
+%% Cambiar por tone mapping de reinhard
+%Especificamos brillo y saturación final
+%para bóveda: brillo = 1; saturación = 0.5;
+brillo = 1; saturacion = 0.5;
+resultadoFinal = operadorTumblin(miMapa, brillo, saturacion);
+subplot(1, 3, 3); imshow(resultadoFinal);
     title('Imagen con operador global de Reinhard');
 truesize
