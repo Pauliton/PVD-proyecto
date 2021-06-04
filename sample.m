@@ -1,14 +1,19 @@
-function [ red, green, blue ] = sample( image, sampleIndices )
-    % Takes relevant samples of the input image
-    redChannel = image(:,:,1);
-    redChannel = reshape(redChannel, [], 1);
-    red = redChannel(sampleIndices);
+% Función para obtener la versión submuestreada de una imagen RGB en los 
+% índices expresados en indicesMuestreo
+%
+% indicesMuestreo expresan los píxeles en un único array.
 
-    greenChannel = image(:,:,2);
-    greenChannel = reshape(greenChannel, [], 1);
-    green = greenChannel(sampleIndices);
+function [red, green, blue] = sample(imagen, indicesMuestreo)
+    %% Leemos cada canal, lo reorganizamos en una columna y muestreamos.
+    canalR = imagen(:,:,1);
+    canalR = reshape(canalR, [], 1);
+    red = canalR(indicesMuestreo);
 
-    blueChannel = image(:,:,3);
-    blueChannel = reshape(blueChannel, [], 1);
-    blue = blueChannel(sampleIndices);
+    canalG = imagen(:,:,2);
+    canalG = reshape(canalG, [], 1);
+    green = canalG(indicesMuestreo);
+
+    canalB = imagen(:,:,3);
+    canalB = reshape(canalB, [], 1);
+    blue = canalB(indicesMuestreo);
 end

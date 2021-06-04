@@ -21,6 +21,7 @@ switch opcion
         im = [62 66 69];
         numImagenes = 3;
         tiempoExposicion = log([16 1 1/8]);
+        cellArrayImagenes = cell(1, numImagenes);
         for i = 1:numImagenes
             cellArrayImagenes{i} = im2uint8(imread(sprintf(path, im(i))));
             imshow(cellArrayImagenes{i});
@@ -32,6 +33,8 @@ end
 %% P1. Lectura de archivos
 fprintf('Leyendo archivos con ruta local: %s\n', path);
 
+%Preasignamos variables para mayor velocidad
+cellArrayImagenes = cell(1, numImagenes);
 for i = 1:numImagenes
     cellArrayImagenes{i} = im2uint8(imread(sprintf(path, i+iminit-1)));
     imshow(cellArrayImagenes{i});
@@ -40,71 +43,94 @@ end
 %% P2. Preprocesado
 fprintf('Recortando los archivos.\n');
 
-%recorte tal que [recorteIzq, recorteSuperior, recorteDch, recorteInferior]
+%Recorte tal que [recorteIzq, recorteSuperior, recorteDch, recorteInferior]
 recorte = [3 35 8 20]; %valor de píxeles a recortar
 cellArrayRecortes = recorteImagen(cellArrayImagenes, recorte);
 
 %% P3. Forma matricial
 %Matriz RGB con filas = los píxeles de cada imagen leída PERO MUESTREADA!
-ancho = size(cellArrayRecortes{1}, 2);
-alto = size(cellArrayRecortes{1}, 1);
-numSamples = ceil(255*2 / (numImagenes - 1)) * 2;
-step = ancho*alto / numSamples;
-sampleIndices = floor((1:step:ancho*alto));
-sampleIndices = sampleIndices';
+fprintf('Muestreando las imágenes.\n');
 
-matrizR = zeros(numSamples, numImagenes);
-matrizG = zeros(numSamples, numImagenes);
-matrizB = zeros(numSamples, numImagenes);
+%1. Determinamos el número de píxeles
+ancho = size(cellArrayRecortes{1}, 2);alto = size(cellArrayRecortes{1}, 1);
+pixeles = ancho*alto;
 
+%2. Calculamos qué píxeles muestrear
+muestras = ceil(255*2 / (numImagenes - 1)) * 2;
+step = pixeles / muestras;
+indicesMuestreo = floor((1:step:pixeles));
+indicesMuestreo = indicesMuestreo';
+
+%3. Preasignamos variables para mayor velocidad
+matrizR = zeros(muestras, numImagenes);
+matrizG = zeros(muestras, numImagenes);
+matrizB = zeros(muestras, numImagenes);
+
+%4. Muestreamos
 for i=1:numImagenes
-    %muestreo por cada canal RGB
+    %Muestreo por cada canal RGB
     [matrizRtemporal, matrizGtemporal, matrizBtemporal] = sample(...
-        cellArrayRecortes{i}, sampleIndices);
-    %imagen con muestras
+        cellArrayRecortes{i}, indicesMuestreo);
+    %Imagen con muestras
     matrizR(:,i) = matrizRtemporal;
     matrizG(:,i) = matrizGtemporal;
     matrizB(:,i) = matrizBtemporal;
 end
 
 %% P4. Resolver sistema lineal
-%log delta t para cada imagen
+%1. Calculamos la matriz 'log delta t' para cada imagen
 B = zeros(ancho*alto, numImagenes);
 for i = 1:numImagenes
     B(:,i) = tiempoExposicion(i);
 end
 
-%Factor de suavizado
-smoothing = 50;
+%2. Factor de suavizado
+lambda = 50;
 
-%Funcion de pesos para cada valor de pixel
-w = zeros(1, 256);
+%3. Funcion de pesos para cada valor de pixel
+pesos = zeros(1, 256);
 for i=1:256
-    w(i) = weight(i, 1, 256);
+    pesos(i) = weight(i, 1, 256);
 end
 
+%4. Resolvemos el sistema con gsolve.m
 fprintf('Calculando el primer sistema lineal.\n');
-[g_R, lE_R] = gsolve(matrizR, B, smoothing, w);
+[g_R, radiancia_R] = gsolve(matrizR, B, lambda, pesos);
 fprintf('Calculando el segundo sistema lineal.\n');
-[g_G, lE_G] = gsolve(matrizG, B, smoothing, w);
+[g_G, radiancia_G] = gsolve(matrizG, B, lambda, pesos);
 fprintf('Calculando el tercer sistema lineal.\n');
-[g_B, lE_B] = gsolve(matrizB, B, smoothing, w);
+[g_B, radiancia_B] = gsolve(matrizB, B, lambda, pesos);
 
 %% P5. Mostrar las curvas de respuesta
 figure; 
     title('Función de respuesta RGB');
 subplot(2, 2, 1); plot(g_R, 0:255, 'r'); 
+    xlabel('Valor de la exposición logarítmica'); ylabel('Valor de píxel Z');
     title('Función de respuesta R'); ylim([0 255]);
-subplot(2, 2, 2); plot(g_G, 0:255, 'g'); 
+subplot(2, 2, 2); plot(g_G, 0:255, 'g');
+    xlabel('Valor de la exposición logarítmica'); ylabel('Valor de píxel Z');
     title('Función de respuesta G'); ylim([0 255]);
 subplot(2, 2, 3); plot(g_B, 0:255, 'b'); ylim([0 255]);
+    xlabel('Valor de la exposición logarítmica'); ylabel('Valor de píxel Z');
     title('Función de respuesta B'); ylim([0 255]);
 subplot(2, 2, 4); plot(g_R, 0:255, 'r', g_G, 0:255, 'g', g_B, 0:255, 'b');
+xlabel('Valor de la exposición logarítmica'); ylabel('Valor de píxel Z');
     title('Funciones de respuesta RGB'); ylim([0 255]);
 
 %% P6. Cálculo del mapa de radiancia
-fprintf('Computing hdr image\n')
-hdrMap = hdr(cellArrayRecortes, g_R, g_G, g_B, w, B);
+fprintf('Calculamos el mapa de radiancia.\n')
 
-figure, imshow(hdrMap);
-    title('Irradiance HDR map');
+miMapa = mapaRadiancia(cellArrayRecortes, g_R, g_G, g_B, B, pesos);
+figure;
+subplot(1, 2, 1); imshow(miMapa);
+    title('Mapa de radiancia HDR');
+    
+%% P7. Tone mapping
+fprintf('Ajustamos el color.\n')
+
+%Especificamos brillo y saturación final
+brillo = 0.72; saturacion = 0.6;
+resultadoFinal = operadorReinhard(miMapa, brillo, saturacion);
+subplot(1, 2, 2); imshow(resultadoFinal);
+    title('Imagen con operador global de Reinhard');
+truesize
