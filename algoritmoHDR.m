@@ -49,6 +49,7 @@ cellArrayRecortes = recorteImagen(cellArrayImagenes, recorte);
 
 %% P3. Forma matricial
 %Matriz RGB con filas = los píxeles de cada imagen leída PERO MUESTREADA!
+%Referencia para muestreo: Konstantinos Monachopoulos, septiembre 2018.
 fprintf('Muestreando las imágenes.\n');
 
 %1. Determinamos el número de píxeles
@@ -121,26 +122,23 @@ xlabel('Valor de la exposición logarítmica'); ylabel('Valor de píxel Z');
 fprintf('Calculamos el mapa de radiancia.\n')
 
 miMapa = mapaRadiancia(cellArrayRecortes, g_R, g_G, g_B, B, pesos);
-figure;
-subplot(1, 3, 1); imshow(miMapa);
+figure; imshow(miMapa);
     title('Mapa de radiancia HDR');
-    
+truesize
+
 %% P7. Tone mapping
 fprintf('Ajustamos el color.\n')
 
 %Especificamos brillo y saturación final
 %para bóveda: brillo = 1; saturación = 0.5;
 brillo = 1; saturacion = 0.5;
-resultadoFinal = operadorTumblin(miMapa, brillo, saturacion);
-subplot(1, 3, 2); imshow(resultadoFinal);
-    title('Imagen con operador de Tumblin');
-truesize
+resultadoTumblin = operadorTumblin(miMapa, brillo, saturacion);
+resultadoReinhard = operadorReinhard(miMapa, brillo, saturacion);
 
-%% Cambiar por tone mapping de reinhard
-%Especificamos brillo y saturación final
-%para bóveda: brillo = 1; saturación = 0.5;
-brillo = 1; saturacion = 0.5;
-resultadoFinal = operadorTumblin(miMapa, brillo, saturacion);
-subplot(1, 3, 3); imshow(resultadoFinal);
+figure;
+subplot(1, 2, 1); imshow(resultadoTumblin);
+    title('Imagen con operador de Tumblin');
+
+subplot(1, 2, 2); imshow(resultadoReinhard);
     title('Imagen con operador global de Reinhard');
 truesize

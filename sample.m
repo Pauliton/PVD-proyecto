@@ -1,5 +1,6 @@
 % Función para obtener la versión submuestreada de una imagen RGB en los 
 % índices expresados en indicesMuestreo
+% Referencia: Konstantinos Monachopoulos, septiembre 2018.
 %
 % indicesMuestreo expresan los píxeles en un único array.
 
