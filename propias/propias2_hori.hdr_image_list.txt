@@ -1,0 +1,7 @@
+# Number of Images
+3
+# Filename  1/shutter_speed f/stop gain(db) ND_filters
+IMG_01_hori.ppm 0.125   8 0 0
+IMG_02_hori.ppm 1       8 0 0
+IMG_03_hori.ppm 8       8 0 0
+

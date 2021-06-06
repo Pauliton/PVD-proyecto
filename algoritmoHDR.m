@@ -3,15 +3,15 @@ close all; clear; clc;
 %warning('off');
 
 %% P0. Seleccion de archivos
-%--------Opcion 1 para archivos de /memorial, else para /personal----------
-opcion = 1;
+opcion = 1;                 %-----------Variable a controlar POR EL USUARIO
+
 switch opcion
     case 1
         path = 'memorial/memorial00%d.png';
         iminit = 61;
         imfinal = 76;
         numImagenes = imfinal-iminit+1;
-        tiempoExposicion = zeros(1, 16);
+        tiempoExposicion = zeros(1, numImagenes);
         for i = 0:numImagenes-1
             tiempoExposicion(i+1) = log(32/(2^i));
         end
@@ -27,7 +27,11 @@ switch opcion
             imshow(cellArrayImagenes{i});
         end
     otherwise
-        fprintf('Aquí hay que poner la carpeta personal.\n');
+        path = 'propias/IMG_0%d_hori.png';
+        iminit = 1;
+        imfinal = 3;
+        numImagenes = imfinal-iminit+1;
+        tiempoExposicion = log([1/8 1 8]);
 end
 
 %% P1. Lectura de archivos
@@ -44,7 +48,11 @@ end
 fprintf('Recortando los archivos.\n');
 
 %Recorte tal que [recorteIzq, recorteSuperior, recorteDch, recorteInferior]
-recorte = [3 35 8 20]; %valor de píxeles a recortar
+if opcion == 1 || opcion == 2
+    recorte = [3 35 8 20]; %valor de píxeles a recortar
+else
+    recorte = [1 1 1 1];   %valor de píxeles a recortar
+end
 cellArrayRecortes = recorteImagen(cellArrayImagenes, recorte);
 
 %% P3. Forma matricial
